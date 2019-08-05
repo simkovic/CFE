@@ -8,6 +8,7 @@ import pickle,os
 from sys import stdout
 from PIL import ImageFont, ImageDraw, Image
 
+
 __all__ = ['getColors','errorbar','pystanErrorbar',
            'printCI','formatAxes',
            'figure','subplot','subplotAnnotate',
@@ -19,7 +20,15 @@ CLR=(0.2, 0.5, 0.6)
 FIGCOL=[3.27,4.86,6.83] # plosone
 FIGCOL=[3.3,5, 7.1] # frontiers
 FIGCOL=[2.87,4.3,5.74]# peerj
-FIGCOL=[3,6,12]
+FIGCOL=[3.3,5,7.1] # plosone new
+
+SMALL=6
+MEDIUM=9
+plt.rc('axes', titlesize=MEDIUM)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL)    # fontsize of the tick labels
+
 # TODO custom ppl style histogram
 def getColors(N):
     ''' creates set of colors for plotting

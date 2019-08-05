@@ -190,9 +190,9 @@ def parameterRecoveryBB():
             chains=6,thin=5,warmup=2000,n_jobs=6,seed=5,refresh=-1)
         saveStanFit(fit,'schnSimBB%02d'%k)
     print('\nFinished fitting smBB')        
-def plot(figdir='',dpi=300):
-    import pylab as plt
-    plt.figure(figsize=(16,5))
+def plot(figname='stan.png',dpi=300):
+    from matusplotlib import figure, subplot,plt
+    figure(size=3,aspect=0.3)
     il=['dog','trolley','wallet','plane','resume',
         'kitten','mean score','median score']
     w=loadStanFit('schnall')
@@ -209,7 +209,7 @@ def plot(figdir='',dpi=300):
     tmp=np.median(-w['tbeta'],axis=0)
     
     for j in range(2):
-        ax=plt.subplot(1,2,1+j)
+        ax=subplot(1,2,1+j)
         plt.plot(xlm,[-d[0],-d[0]])
         plt.xlim(xlm)
         ax.set_xticks(cs);
@@ -235,8 +235,8 @@ def plot(figdir='',dpi=300):
         plt.ylabel('$c_u^\Delta$')
         plt.xlabel(['$c_u=-c_l$','$c_u$'][j])
         plt.title(['OLRM','Beta-Binomial'][j])
-        plt.grid(axis='y')
-    plt.savefig(figdir+'stan.png',bbox_inches='tight',dpi=dpi)
+        plt.grid(axis='x')
+    plt.savefig(figname,bbox_inches='tight',dpi=dpi)
 
 
 if __name__ =='__main__':

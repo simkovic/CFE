@@ -15,11 +15,11 @@ def invdigamma(x):
         >>> x=np.linspace(0,10,11)
         >>> plt.plot(x,invdigamma(digamma(x))) '''
     m=x>=-2.22
-    y=m*(np.exp(x)+0.5)-(1-m)/(x-digamma(1))
+    y=m*(np.exp(x)+0.5)-(1-m)/(x+digamma(1))
     if type(y) is np.ndarray: y[np.isnan(y)]=1
     elif np.isnan(y): y=1
     L=digamma(y)-x
-    while np.min(L)>1e-8:
+    while np.max(np.abs(L))>1e-8:
         y=y-L/polygamma(1,y)
         L=digamma(y)-x
     return y

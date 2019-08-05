@@ -1,10 +1,11 @@
 import numpy as np
-import pylab as plt
 from scipy import stats,__version__
 from scipy.stats import scoreatpercentile as sap
 from scipy.integrate import quad
 from scipy.special import gamma,binom,beta 
 from multiprocessing import Pool
+from matusplotlib import * 
+from matusplotlib import plt
 import os,sys
 from matustats import invdigamma,ab2gg,gg2ab,logit,invlogit, \
     OLRpmf,OLRrvs,yuenTrimmed,anova2Bx2B,scheirerRayHare2Bx2B
@@ -25,14 +26,15 @@ S=[ [-1,0,np.nan,np.nan],
     [0,-6,-12,-18],
     [0,-6,-12,-24],
     ] 
-    
+LWS=[1.5,1,1,1] 
 FIGDIR='figures'+os.path.sep
 SUPDIR=FIGDIR+'supplement'+os.path.sep
 CLRS=['b','r','g','y','k']  
 DLBLS=['Gen. Gamma','Wald','Beta Prime','Beta','Beta-Binomial','OLRM']
 DPI=300
 FIGLBLS=['skew','cint','cohd','nhst','an1f','tost','bftt']
-
+FIGFMT='tiff'
+FII=1
 ###################################################
 #
 # COMPUTATION
@@ -117,7 +119,6 @@ def dgpWorker(np1,np2,cl,cld,rvs,tostDelta,R,N,ofn):
 # PLOTTING ROUTINES
 #
 ###################################################
-from matusplotlib import * 
 
 def plotCI(x,G,ylim=[-0.5,1],alpha=0.05,K=0):
     N=G[0,0,AI-1]/2
@@ -134,7 +135,7 @@ def plotCI(x,G,ylim=[-0.5,1],alpha=0.05,K=0):
                 ((1+np.square(np.nanmedian(v1/v2,1)))/(N**2*(N-1))))
         sel=~np.isnan(d)
         C2=[CLRS[-1],CLRS[1]];C=[CLRS,C2]           
-        plt.plot(x[sel],d[sel],C[K>0][ii],lw=[1.5,1,1][ii])
+        plt.plot(x[sel],d[sel],C[K>0][ii],lw=LWS[ii])
         xx=np.concatenate([x[sel],x[sel][::-1]])
         if K and ii==0:
             lb=d+sd*stats.norm.ppf(alpha/2)
@@ -153,7 +154,7 @@ def plotCohendCI(x,G,ylim=[-0.3,1.5],alpha=0.05):
         v1=G[:,:,3+ii*4];v2=G[:,:,1+ii*4]
         d=np.median((G[:,:,2+ii*4]-G[:,:,ii*4])/np.sqrt((v1+v2)/2),axis=1)
         sel=~np.isnan(d)
-        plt.plot(x[sel],d[sel],CLRS[ii],lw=[1.5,1,1][ii])
+        plt.plot(x[sel],d[sel],CLRS[ii],lw=LWS[ii])
         z=stats.norm.ppf(1-alpha/2)
         s=z*np.sqrt(2/N+np.square(d[sel])/4/N)+1e-15
         xx=np.concatenate([x[sel],x[sel][::-1]])
@@ -168,7 +169,7 @@ def plotNHST(x,G,showLegend=False,alpha=0.05):
     sel=np.all(~np.isnan(G[:,:,0]),axis=1)
     y=(G[sel,:,:]<alpha).mean(1)
     for ii in range(4):
-        plt.plot(x[sel],y[:,ii],CLRS[ii],lw=[1.5,1,1,1][ii])
+        plt.plot(x[sel],y[:,ii],CLRS[ii],lw=LWS[ii])
     #print(np.max(np.atleast_2d(y[:,2]).T-y,axis=0))
     if showLegend: plt.legend(['log welch','welch','MW test','trimmed t'],loc=2)
      
@@ -177,20 +178,21 @@ def plotTOST(x,G,showLegend=False,alpha=0.05):
         sel=np.logical_or(np.all(~np.isnan(G[:,:,2*i+0]),axis=1),
             np.all(~np.isnan(G[:,:,2*i+1]),axis=1))    
         plt.plot(x[sel],np.logical_and(G[:,:,2*i]<alpha,
-            G[:,:,2*i+1]<alpha).mean(1)[sel],CLRS[i],lw=[1.5,1][i])
+            G[:,:,2*i+1]<alpha).mean(1)[sel],CLRS[i],lw=LWS[i])
     if showLegend: plt.legend(['log TOST','TOST'],loc=2)
 def plotBFT(x,G,showLegend=False,alpha=0.05):
-    plt.plot(x,np.median(G[:,:,0]/(1+G[:,:,0]),axis=1),CLRS[0],lw=1.5)
-    plt.plot(x,np.median(G[:,:,1]/(1+G[:,:,1]),axis=1),CLRS[1],lw=1)
+    plt.plot(x,np.median(G[:,:,0]/(1+G[:,:,0]),axis=1),CLRS[0],lw=LWS[0])
+    plt.plot(x,np.median(G[:,:,1]/(1+G[:,:,1]),axis=1),CLRS[1],lw=LWS[1])
     if showLegend: plt.legend(['log Bayes t test','Bayes t test'],loc=3)
 def plotANOVA1F(x,G,showLegend=False,alpha=0.05):
     sel=np.all(~np.isnan(G[:,:,0]),axis=1)
     y=(G[sel,:,:]<alpha).mean(1)
     for ii in range(3):
-        plt.plot(x[sel],y[:,ii],CLRS[ii],lw=[1.5,1,1,1][ii]) 
+        plt.plot(x[sel],y[:,ii],CLRS[ii],lw=LWS[ii]) 
     #print(np.max(np.atleast_2d(y[:,2]).T-y,axis=0))   
     if showLegend: plt.legend(['log-ANOVA','ANOVA','KW test'],loc=2)
-def plotANOVAall(dgps,showLegend=False,alpha=0.05,i=2,j=2):        
+def plotANOVAall(dgps,showLegend=False,alpha=0.05,i=2,j=2): 
+    global FII       
     cls=['$c_l$','$b$','$c_l$','$c_l$','$c_l$','$c_l$']
     lblls=['no X','no ME','uncrossed','crossed',
         'double-crossed','no X','uncrossed']
@@ -207,12 +209,12 @@ def plotANOVAall(dgps,showLegend=False,alpha=0.05,i=2,j=2):
                 s=np.all(~np.isnan(D[:,:,k*9]),axis=1)
                 if not k: plt.title(DLBLS[h])
                 plt.plot(x[s],(D[s,:,k*9+ii*3+2]<alpha).mean(1),
-                    CLRS[ii],lw=[3,1,1][ii],alpha=0.7)
+                    CLRS[ii],lw=LWS[ii],alpha=0.7)
                 if k<5:
                     plt.plot(x[s],(D[s,:,k*9+ii*3+1]<alpha).mean(1),
-                        CLRS[ii]+'--',alpha=0.7,lw=[3,1,1][ii])
+                        CLRS[ii]+'--',alpha=0.7,lw=LWS[ii])
                     plt.plot(x[s],(D[s,:,k*9+ii*3]<alpha).mean(1),
-                        CLRS[ii]+':',alpha=0.7,lw=[3,1,1][ii])
+                        CLRS[ii]+':',alpha=0.7,lw=LWS[ii])
             if not h: plt.ylabel(lblls[k])
             else:ax.set_yticklabels([])
             if k<K-1:ax.set_xticklabels([])
@@ -220,9 +222,14 @@ def plotANOVAall(dgps,showLegend=False,alpha=0.05,i=2,j=2):
             plt.ylim([-0.05,1.05])
             plt.xlim([x[0],x[-1]])
             plt.locator_params(axis='x', nbins=4)#,min_n_ticks=3)
-    plt.savefig(FIGDIR+'ANOVA%d%d.png'%(i,j),bbox_inches='tight',dpi=DPI)
+    if FII>=0:
+        fn='fig%02d.%s'%(FII,FIGFMT)
+        FII+=1
+    else: fn='ANOVA%d%d.png'%(i,j)
+    plt.savefig(FIGDIR+fn,bbox_inches='tight',dpi=DPI,format=FIGFMT)
 
-def plotBrief(x,R,y=np.nan,pref='', ylim=[[],[]]):        
+def plotBrief(x,R,y=np.nan,pref='', ylim=[[],[]]): 
+    global FII       
     figure(size=2,aspect=1.2)
     for f in range(1,7):  
         ax=subplot(3,2,f);
@@ -244,9 +251,14 @@ def plotBrief(x,R,y=np.nan,pref='', ylim=[[],[]]):
         if f<5: ax.set_xticklabels([])
         else: plt.xlabel(['$c_l$','$b$'][int(pref=='W')])
         plt.xlim([x[0],x[-1]])
-    plt.savefig(FIGDIR+pref+'brief',dpi=DPI,bbox_inches='tight')
+    if FII>=0:
+        fn='fig%02d.%s'%(FII,FIGFMT)
+        FII+=1
+    else: fn=pref+'brief.png'
+    plt.savefig(FIGDIR+fn,dpi=DPI,bbox_inches='tight',format=FIGFMT)
        
 def plotXtypes(S):
+    global FII
     figure(size=2,aspect=0.4)
     lbls=['No X','Ballanced','Uncrossed','Crossed','Double-crossed']
     for i in range(5):
@@ -263,7 +275,11 @@ def plotXtypes(S):
             #plt.legend(['F1','F2'])
             plt.ylabel('$d$')
         plt.xlabel(lbls[i])
-    plt.savefig(FIGDIR+'xtypes.png',bbox_inches='tight',dpi=DPI)
+    if FII>=0:
+        fn='fig%02d.%s'%(FII,FIGFMT)
+        FII+=1
+    else: fn='xtypes.png'
+    plt.savefig(FIGDIR+fn,bbox_inches='tight',dpi=DPI,format=FIGFMT)
     plt.clf()
     plt.close()
 
@@ -290,10 +306,13 @@ def plotPDF(A,B,C,pdf,xmax=1,albls=['','','test']):
                 if i+1<A.size: ax.set_xticklabels([])
                 else: plt.xlabel(albls[1]+_hlp(B,j))
                 plt.grid(False)
-    plt.savefig(SUPDIR+albls[-1]+'prob.png',      
+    plt.savefig(SUPDIR+albls[-1]+'prob',format=FIGFMT,     
         bbox_inches='tight',dpi=DPI)
     plt.clf();plt.close()
+    
+    
 def plotFcfe():
+    global FII
     figure(size=1,aspect=0.6)
     x=np.linspace(0,1,101)[1:-1]
     fl=[-np.log(x),-np.log(x/(1-x))]
@@ -302,17 +321,25 @@ def plotFcfe():
         ax=subplot(1,2,1+i)
         plt.plot(x,fl[i])
         plt.plot(x,fu[i])
-        plt.xlabel('$\phi$')
+        plt.xlabel('$g[\phi]$')
         #if not i:plt.ylabel('$f(\phi)$')
-        plt.text(0.25,3,'$f_l(\phi)$',horizontalalignment='center')
-        plt.text(0.65,4.1,'$f_u(1-\phi)$',horizontalalignment='center')
+        plt.text(0.25,3,'$f_l(g)$',horizontalalignment='center')
+        plt.text(0.65,4.1,'$f_u(1-g)$',horizontalalignment='center')
         ttl=['$-\log x$','$-\log(x/(1-x))$'][i]
         #plt.legend(['$f_l(\phi)$','$f_u(1-\phi)$'])
         plt.title(ttl,fontsize=10) 
-    plt.savefig(FIGDIR+'fcfe.png',bbox_inches='tight',dpi=DPI)
+    if FII>=0:
+        fn='fig%02d.%s'%(FII,FIGFMT)
+        FII+=1
+    else: fn='fcfe.png'
+    plt.savefig(FIGDIR+fn,bbox_inches='tight',dpi=DPI)
     plt.clf();plt.close()
+
+
     
+        
 def plotSkew(dgps):
+    global FII
     cls=['$c_l$','$b$','$c_l$','$c_l$','$c_l$','$c_l$']
     figure(size=3,aspect=0.6)
     for h in range(len(dgps)):
@@ -327,7 +354,7 @@ def plotSkew(dgps):
                 y=np.median(D[:,:,6],axis=1)*[1,0.1][dgps[h].suf=='BE']
             elif g==1: y=np.median(D[:,:,7],axis=1)
             elif g==2: y=np.median(D[:,:,23],axis=1)
-            plt.plot(x,y,CLRS[-1],lw=1)
+            plt.plot(x,y,CLRS[-1],lw=LWS[1])
             if g==0: plt.ylim([0,1])
             elif g==1: plt.ylim([[0,10],[0,0.01],[0,3],[0,6],[0,0.1],[0,0.06]][h])
             elif g==2: plt.ylim([[0,3],[0,3],[0,8],[0,3],[0,3],[-3,3]][h])
@@ -340,7 +367,11 @@ def plotSkew(dgps):
             elif g==1:
                 lm=[0,-3,0,0,-2,-2][h]
                 if lm!=0: ax.ticklabel_format(axis='y',style='sci',scilimits=(lm,lm))
-    plt.savefig(FIGDIR+'skew.png',bbox_inches='tight',dpi=DPI)
+    if FII>=0:
+        fn='fig%02d.%s'%(FII,FIGFMT)
+        FII+=1
+    else: fn=FIGLBLS[0]+'png'            
+    plt.savefig(FIGDIR+fn,bbox_inches='tight',dpi=DPI,format=FIGFMT)
     plt.clf();plt.close()
 ###################################################
 #
@@ -462,7 +493,7 @@ class DataGeneratingProcess():
                         temp=(self.np2lbl,self.np2[j])
                         plt.xlabel('$%s=%.2f$'%temp)
             plt.savefig(SUPDIR+self.suf+FIGLBLS[f],
-                dpi=DPI,bbox_inches='tight')
+                dpi=DPI,bbox_inches='tight',format=FIGFMT)
             plt.clf();plt.close()
             
         
@@ -624,6 +655,8 @@ def makeSuppText(dgps):
 \\includegraphics[scale=0.6]{../code/figures/supplement/ANOVA42}
 \\caption{ANOVA with largest $c_l^\Delta$. The precise value for each distribution is presented as the upper bound in fourth column in table 2 in the published article.}\n\\end{figure}\n\\newpage\n''' 
     print(s)
+
+  
     
 if __name__ == '__main__':
     from sys import version_info
@@ -637,23 +670,25 @@ if __name__ == '__main__':
     dgps=[gengamma,wald,betaprime,betadgp,betabinom,olrm]
     #makeParTab(dgps)        
     #makeSuppText(dgps) 
-    
+    plotFcfe()
+    plotXtypes(S)
     
     for dgp in dgps:
         #uncomment to run simulations
         #dgp.compute()
         dgp.plot()
-        dgp.makeSupplement()
-    print('Creating summary figures')
+        #dgp.makeSupplement()
     plotANOVAall(dgps)
-    plotANOVAall(dgps,j=4)
-    plotANOVAall(dgps,j=0)
-    plotANOVAall(dgps,i=0)
-    plotANOVAall(dgps,i=4)
-    plotSkew(dgps)
-    plotXtypes(S)
-    plotFcfe()
     from stanSims import plot as plotStanSims
-    plotStanSims(FIGDIR,DPI)
+    plotStanSims(FIGDIR+['stan.%s'%FIGFMT,'fig%02d.%s'%(FII,FIGFMT)][FII>=0],DPI);
+    if FII>=0: FII+=1
+    #plotANOVAall(dgps,j=4)
+    #plotANOVAall(dgps,j=0)
+    #plotANOVAall(dgps,i=0)
+    #plotANOVAall(dgps,i=4)
+    plotSkew(dgps)
+    
+    
+    
     print('Success')
     
